@@ -43,8 +43,13 @@ const AGENTS = [
     name: 'Claude Code',
     detect: () => existsSync(join(HOME, '.claude')),
     format: 'skill-dir',
+    // Install to both ~/.claude/skills/ and ~/.agents/skills/ (both are scanned)
+    installTargets: () => [
+      join(HOME, '.claude', 'skills', 'arabic-ui-review'),
+      join(HOME, '.agents', 'skills', 'arabic-ui-review'),
+    ],
     installTarget: () => join(HOME, '.claude', 'skills', 'arabic-ui-review'),
-    note: null,
+    note: 'Installed to ~/.claude/skills/ and ~/.agents/skills/',
   },
   {
     id: 'cursor',
@@ -200,8 +205,12 @@ function installAgent(agent) {
 
   switch (agent.format) {
     case 'skill-dir': {
-      ensureDir(target);
-      cpSync(SKILL_SRC, target, { recursive: true });
+      // Install to all target locations (e.g. both ~/.claude/skills/ and ~/.agents/skills/)
+      const targets = agent.installTargets ? agent.installTargets() : [target];
+      for (const t of targets) {
+        ensureDir(t);
+        cpSync(SKILL_SRC, t, { recursive: true });
+      }
       break;
     }
 
