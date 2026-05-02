@@ -273,6 +273,30 @@ function installAgent(agent) {
         ensureDir(t);
         cpSync(SKILL_SRC, t, { recursive: true });
 
+        // Claude Code: also register as a slash command in ~/.claude/commands/
+        // so /arabic-review appears in the command palette
+        if (agent.id === 'claude-code') {
+          const commandsDir = join(HOME, '.claude', 'commands');
+          ensureDir(commandsDir);
+          const commandFile = join(commandsDir, 'arabic-review.md');
+          const commandContent = [
+            'Use the arabic-ui-review skill to conduct a full Arabic UI language audit on this codebase.',
+            '',
+            'If arguments were passed after the command, interpret them as follows:',
+            '- A path argument → scan that path instead of the current directory',
+            '- `--translations-only` → only audit translation/i18n files',
+            '- `--hardcoded-only` → only search for hardcoded Arabic in source files',
+            '- `--segment <name>` → scan one segment: components, pages, notifications, errors, forms, templates, api, or config',
+            '- `--fix` → run the full audit then immediately enter the fix loop',
+            '- `--rules` → print the full Arabic rules reference without scanning anything',
+            '- `--rule <code>` → check only the specified rule category (e.g. 1.1, 3, 7)',
+            '- `--summary` → reprint the last arabic-review-report.md without rescanning',
+            '',
+            'Follow the skill instructions exactly, starting from Phase 0.',
+          ].join('\n');
+          writeFileSync(commandFile, commandContent, 'utf8');
+        }
+
         // Hermes requires extra frontmatter: version, author, license, tags
         if (agent.id === 'hermes') {
           const skillMdPath = join(t, 'SKILL.md');
