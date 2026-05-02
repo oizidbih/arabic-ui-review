@@ -1,0 +1,28 @@
+{
+  "name": "arabic-ui-review",
+  "version": "1.0.0",
+  "description": "Arabic UI language review skill — installs into Claude Code, Cursor, Windsurf, Cline, and other AI coding agents",
+  "type": "module",
+  "bin": {
+    "arabic-ui-review": "./bin/install.js"
+  },
+  "files": [
+    "bin/",
+    "arabic-ui-review/",
+    "templates/"
+  ],
+  "keywords": ["arabic", "i18n", "l10n", "rtl", "ai-agent", "claude", "cursor", "skill"],
+  "author": "ElTechnology",
+  "license": "MIT",
+  "dependencies": {
+    "@clack/prompts": "^0.9.0",
+    "kleur": "^4.1.5"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oizidbih/arabic-ui-review.git"
+  }
+}

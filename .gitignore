@@ -1,5 +1,10 @@
 # Never commit API keys
 .arabic-review.json
+.arabic-review.env
+
+# Node
+node_modules/
+package-lock.json
 
 # Python
 __pycache__/

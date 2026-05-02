@@ -22,24 +22,31 @@ ask the user whether to apply them.
 
 ## Phase 0 — Setup
 
-Before starting, check for a config file at `.arabic-review.json` in the project root:
+Resolve LLM config in this priority order:
 
-```json
-{
-  "model": "fanar",
-  "api_key": "YOUR_KEY_HERE",
-  "api_base": "https://api.fanar.qa/v1",
-  "model_id": "Fanar-S-1-Turbo"
-}
-```
+1. **Shell / project `.env`** — read these environment variables:
+   ```
+   ARABIC_REVIEW_MODEL        (fanar | openai | claude | groq | custom)
+   ARABIC_REVIEW_API_BASE     (default: https://api.fanar.qa/v1)
+   ARABIC_REVIEW_MODEL_ID     (default: Fanar-S-1-Turbo)
+   FANAR_API_KEY              (or OPENAI_API_KEY / ANTHROPIC_API_KEY / GROQ_API_KEY)
+   ARABIC_REVIEW_API_KEY      (generic fallback key var)
+   ```
 
-If the file is missing or `api_key` is unset, tell the user:
+2. **Global installer config** — `~/.arabic-review/.env` (created by `npx arabic-ui-review`)
 
-> **Arabic LLM not configured.** Create `.arabic-review.json` in your project root with your API key. Default model is Fanar (https://api.fanar.qa). You can swap `model_id` for any OpenAI-compatible model by also changing `api_base`. Skip quality checks? (Y/N)
+3. **Legacy project config** — `.arabic-review.json` in the project root (older format, still supported)
 
-If they skip, continue without LLM quality checks. If they want to set up, guide them through it, then proceed.
+If no API key is found anywhere, tell the user:
 
-Read `references/model-setup.md` for API call format details.
+> **Arabic LLM not configured.**
+> Run `npx arabic-ui-review` to set up the model and API key interactively.
+> The default model is **Fanar** (Arabic-specialized, https://api.fanar.qa).
+> Skip quality checks for now? (Y/N)
+
+If they skip, continue without LLM quality checks. If they want to set up, run them through the npx installer or guide them to edit `~/.arabic-review/.env`.
+
+Read `references/model-setup.md` for API call format details and alternative model options.
 
 ---
 
