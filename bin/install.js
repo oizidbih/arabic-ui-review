@@ -272,6 +272,19 @@ function installAgent(agent) {
       for (const t of targets) {
         ensureDir(t);
         cpSync(SKILL_SRC, t, { recursive: true });
+
+        // Hermes requires extra frontmatter: version, author, license, tags
+        if (agent.id === 'hermes') {
+          const skillMdPath = join(t, 'SKILL.md');
+          if (existsSync(skillMdPath)) {
+            const original = readFileSync(skillMdPath, 'utf8');
+            const patched = original.replace(
+              /^---\n/,
+              '---\nversion: 1.0.0\nauthor: ElTechnology\nlicense: MIT\nmetadata:\n  hermes:\n    tags: [arabic, i18n, l10n, rtl, ui-review, translation]\n    related_skills: []\n'
+            );
+            writeFileSync(skillMdPath, patched, 'utf8');
+          }
+        }
       }
       break;
     }
@@ -397,6 +410,39 @@ function writeEnvConfig(model) {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
+
+const { version } = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf8'));
+
+const args = process.argv.slice(2);
+if (args.includes('--version') || args.includes('-v')) {
+  console.log(version);
+  process.exit(0);
+}
+if (args.includes('--help') || args.includes('-h')) {
+  console.log(`arabic-ui-review v${version}
+
+  Installs the Arabic UI Review skill into your AI coding agents.
+
+  Usage:
+    npx arabic-ui-review            Interactive installer
+    npx arabic-ui-review --version  Print version
+    npx arabic-ui-review --list     List all supported agents
+
+  Supported agents:
+    Claude Code, Roo Code, Kilo Code, Hermes, Pi, Cursor, Windsurf,
+    Cline, Continue, Aider, Copilot, OpenCode, Amp, Zed, Warp, OpenClaw
+
+  Docs: https://github.com/El-Technology/arabic-ui-review
+  `);
+  process.exit(0);
+}
+if (args.includes('--list')) {
+  AGENTS.forEach(a => {
+    const detected = (() => { try { return a.detect(); } catch { return false; } })();
+    console.log(`  ${detected ? '✓' : '○'}  ${a.name}`);
+  });
+  process.exit(0);
+}
 
 async function main() {
   console.log('');
