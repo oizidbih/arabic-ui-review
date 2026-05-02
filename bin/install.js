@@ -77,7 +77,7 @@ const AGENTS = [
     id: 'continue',
     name: 'Continue.dev',
     detect: () => existsSync(join(HOME, '.continue')),
-    format: 'markdown',
+    format: 'continue',
     installTarget: () => join(HOME, '.continue', 'rules'),
     note: null,
   },
@@ -97,7 +97,7 @@ const AGENTS = [
     detect: () =>
       existsSync(join(HOME, '.config', 'opencode')) ||
       which('opencode'),
-    format: 'markdown',
+    format: 'opencode',
     installTarget: () => join(HOME, '.config', 'opencode', 'rules'),
     note: null,
   },
@@ -105,9 +105,9 @@ const AGENTS = [
     id: 'aider',
     name: 'Aider',
     detect: () => which('aider'),
-    format: 'markdown',
+    format: 'aider',
     installTarget: () => join(HOME, '.aider', 'rules'),
-    note: null,
+    note: 'Add --read ~/.aider/rules/arabic-ui-review.md to your aider command',
   },
   {
     id: 'copilot',
@@ -123,7 +123,7 @@ const AGENTS = [
     id: 'amp',
     name: 'Amp (Sourcegraph)',
     detect: () => existsSync(join(HOME, '.amp')) || which('amp'),
-    format: 'markdown',
+    format: 'amp',
     installTarget: () => join(HOME, '.amp', 'rules'),
     note: null,
   },
@@ -133,7 +133,7 @@ const AGENTS = [
     detect: () =>
       existsSync(join(HOME, '.config', 'zed')) ||
       existsSync(join(HOME, 'Library', 'Application Support', 'Zed')),
-    format: 'markdown',
+    format: 'zed',
     installTarget: () => join(HOME, '.config', 'zed', 'rules'),
     note: null,
   },
@@ -248,6 +248,41 @@ function installAgent(agent) {
       } else {
         writeFileSync(dest, content, 'utf8');
       }
+      break;
+    }
+
+    case 'opencode': {
+      ensureDir(target);
+      const content = readTemplate('opencode-rule.md') || buildGenericRule();
+      writeFileSync(join(target, 'arabic-ui-review.md'), content, 'utf8');
+      break;
+    }
+
+    case 'aider': {
+      ensureDir(target);
+      const content = readTemplate('aider-rule.md') || buildGenericRule();
+      writeFileSync(join(target, 'arabic-ui-review.md'), content, 'utf8');
+      break;
+    }
+
+    case 'continue': {
+      ensureDir(target);
+      const content = readTemplate('continue-rule.md') || buildGenericRule();
+      writeFileSync(join(target, 'arabic-ui-review.md'), content, 'utf8');
+      break;
+    }
+
+    case 'amp': {
+      ensureDir(target);
+      const content = readTemplate('amp-rule.md') || buildGenericRule();
+      writeFileSync(join(target, 'arabic-ui-review.md'), content, 'utf8');
+      break;
+    }
+
+    case 'zed': {
+      ensureDir(target);
+      const content = readTemplate('zed-rule.md') || buildGenericRule();
+      writeFileSync(join(target, 'arabic-ui-review.md'), content, 'utf8');
       break;
     }
 
