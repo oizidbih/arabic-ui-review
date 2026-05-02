@@ -150,39 +150,67 @@ Process each segment in turn. Present findings per segment so the user isn't ove
 
 ## Phase 4 — Arabic Quality Analysis (LLM-powered)
 
-For each Arabic string collected (from translation files and hardcoded), call the configured
-Arabic LLM to evaluate quality. Read `references/model-setup.md` for the exact API call.
+Read `references/arabic-rules.md` — it defines every rule category and sub-category with
+examples. Read `references/model-setup.md` for the API call format.
 
-**Evaluate each string for:**
+### Checking order per string
 
-| Check | What to look for |
-|-------|-----------------|
-| **Spelling** | Typos, wrong letter forms |
-| **Grammar** | Correct verb/noun agreement, proper tense |
-| **Formality** | Match the app's tone (formal UI vs. conversational) |
-| **RTL markers** | Missing `‏` (RLM) where needed in mixed text |
-| **Diacritics** | Missing tashkeel where clarity matters (optional) |
-| **Dialect vs MSA** | Flag dialect words if Modern Standard Arabic expected |
-| **Truncation risk** | Very long strings that may overflow fixed-width UI |
-| **Placeholder integrity** | Variables like `{name}` unchanged in translation |
+For each Arabic string, instruct the LLM to check in this order:
 
-Batch strings in groups of 20 to avoid rate limits. Include context (file path, UI segment)
-in the prompt so the LLM can judge appropriateness.
+| # | Category (Arabic) | Code | Notes |
+|---|-------------------|------|-------|
+| 1 | الإملاء | 1.x | Always check — hamzas, ta marbuta, similar letters, proper nouns, foreign words |
+| 2 | التفقيط | 2.x | Only if string contains numbers or monetary amounts |
+| 3 | القواعد | 3.x | Case endings, verb mood, agreement, إنّ/كان families, ممنوع من الصرف |
+| 4 | الصياغة | 4.x | Style, dialect, loanwords, preposition collocation, derivation |
+| 5 | التشكيل | 5.x | Only if string contains diacritics |
+| 6 | النص القرآني | 6.x | Identify first — skip spelling rules for Quranic portions |
+| 7 | علامات الترقيم | 7.x | Comma, semicolon, full stop, dashes, colon, ؟ ! |
 
-**LLM prompt template:**
+Additionally check always:
+- **RTL markers**: missing `‏` (U+200F) where needed in mixed Arabic/Latin text
+- **Placeholder integrity**: `{name}`, `%s`, `{{var}}` unchanged in translated strings
+- **Truncation risk**: string unusually long for a UI label (>80 chars in a button/title context)
+
+### Batching
+
+Send strings in groups of 20. Include context (file path, segment type, framework) so the
+LLM can judge register appropriateness.
+
+### LLM prompt template
+
 ```
-You are an expert Arabic language reviewer for software UI.
-Review the following Arabic UI strings from a [FRAMEWORK] application.
-For each string, identify: spelling errors, grammar issues, formality mismatches,
-RTL marker problems, and any quality concerns. Be concise and precise.
-Context: [SEGMENT_NAME] in [FILE_PATH]
+أنت مراجع لغوي متخصص في واجهات المستخدم العربية ومتمكّن من قواعد اللغة العربية الفصحى.
+راجع النصوص العربية التالية من تطبيق [FRAMEWORK].
+السياق: [SEGMENT_TYPE] — [FILE_PATH]
 
-Strings to review:
-1. "[STRING]"
-2. "[STRING]"
-...
+لكل نص، افحص القواعد التالية بالترتيب:
+1. الإملاء: الهمزات (أوّل/وسط/آخر)، التاء المربوطة، الحروف المتقاربة صوتياً، الحروف المتشابهة شكلاً، أسماء الأعلام، الكلمات الأجنبية
+2. التفقيط: إن وُجدت أرقام أو مبالغ مالية
+3. القواعد: الحالات الإعرابية، الأعداد، الفعل المضارع، إنّ وأخواتها، كان وأخواتها، الممنوع من الصرف، الموافقات
+4. الصياغة: التراكيب الشائعة غير الفصيحة، المقابل الفصيح للعامي والأجنبي، حروف الجر، الاشتقاقات
+5. التشكيل: إن وُجد تشكيل جزئي أو كلي
+6. النص القرآني: حدّد أوّلاً إن كان النص قرآنياً — إن كان كذلك لا تطبّق عليه قواعد الإملاء
+7. علامات الترقيم: الفاصلة ومواضعها، الفاصلة المنقوطة، النقطة، الشرطتان، النقطتان الرأسيتان، ؟ !
 
-Respond as JSON: [{"index": 1, "issues": [...], "severity": "error|warning|info", "suggested_fix": "..."}]
+النصوص:
+[NUMBERED_STRINGS]
+
+أجب بصيغة JSON فقط:
+[{
+  "index": 1,
+  "violations": [
+    {
+      "rule": "1.1.2",
+      "rule_name": "الهمزة المتوسطة",
+      "severity": "error|warning|info",
+      "found": "النص الخاطئ أو الجزء منه",
+      "suggested_fix": "التصحيح المقترح",
+      "explanation": "سبب الخطأ باختصار"
+    }
+  ]
+}]
+إذا كان النص صحيحاً في جميع النقاط، أعد: {"index": N, "violations": []}
 ```
 
 ---

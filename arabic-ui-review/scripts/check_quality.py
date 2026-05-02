@@ -95,6 +95,67 @@ def load_config() -> dict:
 
 # ─── LLM call ─────────────────────────────────────────────────────────────────
 
+RULE_CHECK_ORDER = """
+افحص كل نص بالترتيب التالي:
+
+1. الإملاء (1.x):
+   - الهمزة في بداية الكلمة: همزة وصل vs همزة قطع
+   - الهمزة المتوسطة: تحديد المقعد الصحيح (ي/و/ا/بدون مقعد) وفق أقوى الحركات
+   - الهمزة المتطرفة: المقعد بحسب آخر حركة قبلها
+   - الهاء والتاء المربوطة: التمييز بين ة وه في نهاية الكلمة
+   - التاء المربوطة والتاء المفتوحة: ة (تُنطق هاء في الوقف) vs ت (تُنطق تاء دائماً)
+   - الحروف المتقاربة صوتياً: ذ/ز/ظ، س/ص، ض/ظ، ث/س، ح/هـ، ع/ء
+   - الحروف المتشابهة شكلاً: ر/ز، ب/ت/ث/ن/ي، ح/ج/خ، ع/غ، ف/ق، د/ذ
+   - أخطاء متنوعة: ألف التفريق (واو الجماعة)، الألف اللينة، هذا/ذلك/لكن
+   - أسماء الأعلام والكيانات: التحقق من الرسم الصحيح المعتمد
+   - الكلمات الأجنبية: التحقق من اتساق التعريب مع الاتفاقيات الراسخة
+
+2. التفقيط (2.x) — فقط إن احتوى النص على أرقام أو مبالغ مالية:
+   - المبالغ الصحيحة: التوافق في التذكير/التأنيث والصياغة الصحيحة
+   - المبالغ الكسرية: الربط بـ"و" والتوافق مع وحدة الكسر
+
+3. القواعد (3.x):
+   - الحالات الإعرابية للأعداد: تمييز العدد (3-10 جمع مجرور، 11-99 مفرد منصوب، مئة/ألف مفرد مجرور)
+   - الفعل المضارع: المنصوب (بعد أن/لن/كي) vs المجزوم (بعد لم/لا الناهية) vs المرفوع (الأصل)
+   - المجرورات: جمع المذكر السالم (ين)، المثنى (ين)، المفرد (كسرة)
+   - إنّ وأخواتها: اسم إنّ منصوب وخبرها مرفوع، مع كل التوابع (صفة، بدل، مؤخر)
+   - كان وأخواتها: اسم كان مرفوع وخبرها منصوب، مع كل التوابع
+   - الممنوع من الصرف: فتحة في الجر بدلاً من كسرة، بدون تنوين (أفعل، جموع مفاعل/أفاعل، أعلام خاصة)
+   - الكلمات المتغيرة بالإعراب: ذو/ذي/ذا، أبو/أبي/أبا
+   - الجملة الاسمية: مبتدأ مرفوع وخبر مرفوع
+   - الموافقة عدد/معدود تذكيراً وتأنيثاً (العكس في 3-10، التطابق في 11-12)
+   - الموافقة عدد/معدود إفراداً وجمعاً (جمع في 3-10، مفرد منصوب في 11+)
+   - كلا/كلتا، أحد/إحدى، ذو/ذات: التوافق مع ما يضاف إليه
+
+4. الصياغة (4.x):
+   - "قام بـ + مصدر" → استبدله بالفعل المباشر
+   - الكلمات الأجنبية ذات المقابل الفصيح المعتمد (هاتف، حاسوب، بريد إلكتروني...)
+   - الكلمات العامية ذات المقابل الفصيح (قليلاً بدل شوية، كثيراً بدل كتير...)
+   - حروف الجر مع الأفعال: تحدّث عن/اهتمّ بـ/أسهم في
+   - الأفعال المتعدية بدون حرف جر التي استُخدم معها حرف جر زائد
+   - الاشتقاقات: اسم الفاعل/المفعول/المصدر الصحيح
+
+5. التشكيل (5.x) — فقط إن احتوى النص على تشكيل:
+   - التشكيل الكلي: التحقق من كل حركة
+   - تشكيل الأواخر: مطابقة الحالة الإعرابية
+   - التشكيل الجزئي: تصحيح ما هو موجود فقط
+
+6. النص القرآني (6.x):
+   - تحديد أي اقتباس قرآني أوّلاً
+   - التحقق من مطابقته للرسم العثماني (الصلوة، الزكوة، يأيّها...)
+   - لا تُطبّق قواعد الإملاء العادية على النص القرآني
+
+7. علامات الترقيم (7.x):
+   - الفاصلة ، : قبل العطف بين جمل طويلة، قبل ظروف الزمان (عندما/حين/إذ)، قبل لكن/بل/أمّا، قبل الشرط، قبل الأسماء الموصولة والإشارة، قبل إنّ وأخواتها، بعد نعم/لا/بلى، قبل أي التفسيرية
+   - الفاصلة المنقوطة ؛ : قبل إذن/لذلك/ومن ثَمّ/وبالتالي
+   - النقطة . : نهاية كل فقرة/جملة تامة، قبل أمّا عند تغيير الموضوع
+   - الشرطتان — — : حول الجمل الدعائية المعترضة (رحمه الله، صلى الله عليه وسلم)
+   - النقطتان الرأسيتان : : بعد قال/يلي/كالتالي/ما يلي
+   - علامة الاستفهام ؟ : بعد كل سؤال مباشر
+   - علامة التعجب ! : بعد الجمل التعجبية
+"""
+
+
 def check_batch(strings: list[str], context: str, config: dict) -> list[dict]:
     try:
         import httpx
@@ -115,22 +176,30 @@ def check_batch(strings: list[str], context: str, config: dict) -> list[dict]:
             {
                 'role': 'user',
                 'content': (
-                    'أنت مراجع لغوي متخصص في واجهات المستخدم العربية.\n'
-                    'راجع النصوص العربية التالية من تطبيق برمجي.\n'
-                    f'السياق: {context}\n\n'
-                    'لكل نص، حدد: الأخطاء الإملائية، الأخطاء النحوية، عدم مناسبة المستوى الرسمي، '
-                    'مشاكل اتجاه النص (RTL)، وأي مشاكل جودة أخرى.\n'
-                    'إذا كان النص صحيحاً تماماً، أعد مصفوفة issues فارغة.\n\n'
-                    f'النصوص:\n{numbered}\n\n'
-                    'أجب بصيغة JSON فقط، بدون أي نص إضافي:\n'
-                    '[{"index": 1, "issues": ["وصف المشكلة"], '
-                    '"severity": "error|warning|info", '
-                    '"suggested_fix": "النص المقترح أو null"}]'
+                    'أنت مراجع لغوي متخصص في واجهات المستخدم العربية ومتمكّن من قواعد اللغة العربية الفصحى.\n'
+                    f'راجع النصوص العربية التالية. السياق: {context}\n\n'
+                    + RULE_CHECK_ORDER +
+                    '\nللمخرجات: أجب بصيغة JSON فقط، بدون أي نص إضافي:\n'
+                    '[{\n'
+                    '  "index": 1,\n'
+                    '  "violations": [\n'
+                    '    {\n'
+                    '      "rule": "1.1.2",\n'
+                    '      "rule_name": "الهمزة المتوسطة",\n'
+                    '      "severity": "error|warning|info",\n'
+                    '      "found": "الجزء الخاطئ من النص",\n'
+                    '      "suggested_fix": "التصحيح المقترح",\n'
+                    '      "explanation": "سبب الخطأ باختصار"\n'
+                    '    }\n'
+                    '  ]\n'
+                    '}]\n'
+                    'إذا كان النص صحيحاً في جميع النقاط: {"index": N, "violations": []}\n\n'
+                    f'النصوص:\n{numbered}'
                 ),
             }
         ],
         'temperature': 0.1,
-        'max_tokens': 2000,
+        'max_tokens': 4000,
     }
 
     try:
@@ -138,7 +207,7 @@ def check_batch(strings: list[str], context: str, config: dict) -> list[dict]:
             f"{config['api_base']}/chat/completions",
             headers=headers,
             json=payload,
-            timeout=45,
+            timeout=60,
         )
         response.raise_for_status()
         content = response.json()['choices'][0]['message']['content']
@@ -189,13 +258,40 @@ def main():
             r['original_text'] = strings[abs_idx] if abs_idx < len(strings) else ''
         all_results.extend(results)
 
+    def count_severity(level: str) -> int:
+        return sum(
+            1 for r in all_results
+            for v in r.get('violations', [])
+            if v.get('severity') == level
+        )
+
+    # Build per-rule-category breakdown
+    rule_breakdown: dict[str, int] = {}
+    for r in all_results:
+        for v in r.get('violations', []):
+            cat = v.get('rule', '?').split('.')[0]  # top-level category number
+            rule_breakdown[cat] = rule_breakdown.get(cat, 0) + 1
+
+    CATEGORY_NAMES = {
+        '1': 'الإملاء',
+        '2': 'التفقيط',
+        '3': 'القواعد',
+        '4': 'الصياغة',
+        '5': 'التشكيل',
+        '6': 'النص القرآني',
+        '7': 'علامات الترقيم',
+    }
+
     summary = {
         'total_strings': len(strings),
-        'strings_with_issues': sum(1 for r in all_results if r.get('issues')),
-        'errors':   sum(1 for r in all_results if r.get('severity') == 'error'),
-        'warnings': sum(1 for r in all_results if r.get('severity') == 'warning'),
-        'info':     sum(1 for r in all_results if r.get('severity') == 'info'),
-        'results':  all_results,
+        'strings_with_violations': sum(1 for r in all_results if r.get('violations')),
+        'errors':   count_severity('error'),
+        'warnings': count_severity('warning'),
+        'info':     count_severity('info'),
+        'by_category': {
+            CATEGORY_NAMES.get(k, k): v for k, v in sorted(rule_breakdown.items())
+        },
+        'results': all_results,
     }
 
     out = json.dumps(summary, ensure_ascii=False, indent=2)
@@ -205,7 +301,13 @@ def main():
         Path(args.output).write_text(out, encoding='utf-8')
         print(f'Saved to: {args.output}', file=sys.stderr)
 
-    print(f"Done. {summary['errors']} errors, {summary['warnings']} warnings.", file=sys.stderr)
+    print(
+        f"Done. {summary['errors']} errors, {summary['warnings']} warnings, {summary['info']} info.",
+        file=sys.stderr,
+    )
+    if summary['by_category']:
+        for cat, count in summary['by_category'].items():
+            print(f'  {cat}: {count}', file=sys.stderr)
 
 
 if __name__ == '__main__':
