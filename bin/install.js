@@ -199,6 +199,14 @@ const AGENTS = [
         : join(HOME, '.config', 'openclaw', 'rules'),
     note: null,
   },
+  {
+    id: 'codex',
+    name: 'Codex CLI (OpenAI)',
+    detect: () => existsSync(join(HOME, '.codex')) || which('codex'),
+    format: 'codex',
+    installTarget: () => join(HOME, '.codex', 'rules'),
+    note: '/arabic-review registered in ~/.codex/prompts/',
+  },
 ];
 
 // ─── Model definitions ────────────────────────────────────────────────────────
@@ -262,6 +270,51 @@ function buildGenericRule() {
   return existsSync(skillMd) ? readFileSync(skillMd, 'utf8') : '# Arabic UI Review\nReview Arabic UI language when asked.';
 }
 
+/** Builds the slash-command markdown file content (same format for Claude Code, OpenCode, Codex, Amp). */
+function buildCommandContent() {
+  return [
+    '---',
+    'description: Review Arabic UI language in this codebase (translations, hardcoded strings, quality)',
+    '---',
+    '',
+    'Use the arabic-ui-review skill to conduct a full Arabic UI language audit on this codebase.',
+    '',
+    'If arguments were passed after the command, interpret them as follows:',
+    '- A path argument → scan that path instead of the current directory',
+    '- `--translations-only` → only audit translation/i18n files',
+    '- `--hardcoded-only` → only search for hardcoded Arabic in source files',
+    '- `--segment <name>` → scan one segment: components, pages, notifications, errors, forms, templates, api, or config',
+    '- `--fix` → run the full audit then immediately enter the fix loop',
+    '- `--rules` → print the full Arabic rules reference without scanning anything',
+    '- `--rule <code>` → check only the specified rule category (e.g. 1.1, 3, 7)',
+    '- `--summary` → reprint the last arabic-review-report.md without rescanning',
+    '',
+    'Follow the skill instructions exactly, starting from Phase 0.',
+  ].join('\n');
+}
+
+/** Write a slash-command file to a given directory (creates dir if needed). */
+function writeCommandFile(dir) {
+  ensureDir(dir);
+  writeFileSync(join(dir, 'arabic-review.md'), buildCommandContent(), 'utf8');
+}
+
+/** Patch ~/.continue/config.json to add /arabic-review slash command (no-op if file absent). */
+function patchContinueConfig() {
+  const configPath = join(HOME, '.continue', 'config.json');
+  if (!existsSync(configPath)) return;
+  let config;
+  try { config = JSON.parse(readFileSync(configPath, 'utf8')); } catch { return; }
+  if (!Array.isArray(config.slashCommands)) config.slashCommands = [];
+  if (config.slashCommands.some(c => c.name === 'arabic-review')) return; // already present
+  config.slashCommands.push({
+    name: 'arabic-review',
+    description: 'Review Arabic UI language in this codebase',
+    prompt: buildCommandContent().replace(/^---[\s\S]*?---\n\n/, ''), // strip frontmatter
+  });
+  writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
+}
+
 function installAgent(agent) {
   const target = agent.installTarget();
 
@@ -273,28 +326,9 @@ function installAgent(agent) {
         ensureDir(t);
         cpSync(SKILL_SRC, t, { recursive: true });
 
-        // Claude Code: also register as a slash command in ~/.claude/commands/
-        // so /arabic-review appears in the command palette
+        // Claude Code: register /arabic-review in ~/.claude/commands/ (command palette)
         if (agent.id === 'claude-code') {
-          const commandsDir = join(HOME, '.claude', 'commands');
-          ensureDir(commandsDir);
-          const commandFile = join(commandsDir, 'arabic-review.md');
-          const commandContent = [
-            'Use the arabic-ui-review skill to conduct a full Arabic UI language audit on this codebase.',
-            '',
-            'If arguments were passed after the command, interpret them as follows:',
-            '- A path argument → scan that path instead of the current directory',
-            '- `--translations-only` → only audit translation/i18n files',
-            '- `--hardcoded-only` → only search for hardcoded Arabic in source files',
-            '- `--segment <name>` → scan one segment: components, pages, notifications, errors, forms, templates, api, or config',
-            '- `--fix` → run the full audit then immediately enter the fix loop',
-            '- `--rules` → print the full Arabic rules reference without scanning anything',
-            '- `--rule <code>` → check only the specified rule category (e.g. 1.1, 3, 7)',
-            '- `--summary` → reprint the last arabic-review-report.md without rescanning',
-            '',
-            'Follow the skill instructions exactly, starting from Phase 0.',
-          ].join('\n');
-          writeFileSync(commandFile, commandContent, 'utf8');
+          writeCommandFile(join(HOME, '.claude', 'commands'));
         }
 
         // Hermes requires extra frontmatter: version, author, license, tags
@@ -354,6 +388,8 @@ function installAgent(agent) {
       ensureDir(target);
       const content = readTemplate('opencode-rule.md') || buildGenericRule();
       writeFileSync(join(target, 'arabic-ui-review.md'), content, 'utf8');
+      // Also register /arabic-review in ~/.config/opencode/commands/ (slash command palette)
+      writeCommandFile(join(HOME, '.config', 'opencode', 'commands'));
       break;
     }
 
@@ -368,6 +404,8 @@ function installAgent(agent) {
       ensureDir(target);
       const content = readTemplate('continue-rule.md') || buildGenericRule();
       writeFileSync(join(target, 'arabic-ui-review.md'), content, 'utf8');
+      // Also patch ~/.continue/config.json slashCommands if it exists
+      patchContinueConfig();
       break;
     }
 
@@ -375,6 +413,8 @@ function installAgent(agent) {
       ensureDir(target);
       const content = readTemplate('amp-rule.md') || buildGenericRule();
       writeFileSync(join(target, 'arabic-ui-review.md'), content, 'utf8');
+      // Also register /arabic-review in ~/.amp/prompts/ (slash command palette)
+      writeCommandFile(join(HOME, '.amp', 'prompts'));
       break;
     }
 
@@ -396,6 +436,15 @@ function installAgent(agent) {
       ensureDir(target);
       const content = readTemplate('openclaw-rule.md') || buildGenericRule();
       writeFileSync(join(target, 'arabic-ui-review.md'), content, 'utf8');
+      break;
+    }
+
+    case 'codex': {
+      ensureDir(target);
+      const content = readTemplate('generic-rule.md') || buildGenericRule();
+      writeFileSync(join(target, 'arabic-ui-review.md'), content, 'utf8');
+      // Register /arabic-review in ~/.codex/prompts/ (slash command palette)
+      writeCommandFile(join(HOME, '.codex', 'prompts'));
       break;
     }
 
