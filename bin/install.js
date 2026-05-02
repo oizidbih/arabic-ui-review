@@ -137,6 +137,68 @@ const AGENTS = [
     installTarget: () => join(HOME, '.config', 'zed', 'rules'),
     note: null,
   },
+  {
+    id: 'roo-code',
+    name: 'Roo Code',
+    detect: () => existsSync(join(HOME, '.roo')),
+    format: 'skill-dir',
+    installTarget: () => join(HOME, '.roo', 'skills', 'arabic-ui-review'),
+    note: null,
+  },
+  {
+    id: 'kilo-code',
+    name: 'Kilo Code',
+    detect: () =>
+      existsSync(join(HOME, '.kilocode')) ||
+      existsSync(join(HOME, '.kilo')),
+    format: 'skill-dir',
+    installTarget: () =>
+      existsSync(join(HOME, '.kilocode'))
+        ? join(HOME, '.kilocode', 'skills', 'arabic-ui-review')
+        : join(HOME, '.kilo', 'skills', 'arabic-ui-review'),
+    note: null,
+  },
+  {
+    id: 'hermes',
+    name: 'Hermes Agent',
+    detect: () => existsSync(join(HOME, '.hermes')),
+    format: 'skill-dir',
+    // Hermes organises skills under category subdirs; software-development is the right category
+    installTarget: () => join(HOME, '.hermes', 'skills', 'software-development', 'arabic-ui-review'),
+    note: null,
+  },
+  {
+    id: 'pi',
+    name: 'Pi Agent',
+    detect: () => existsSync(join(HOME, '.pi', 'agent')),
+    format: 'skill-dir',
+    installTarget: () => join(HOME, '.pi', 'agent', 'skills', 'arabic-ui-review'),
+    note: null,
+  },
+  {
+    id: 'warp',
+    name: 'Warp',
+    detect: () =>
+      existsSync(join(HOME, '.warp')) ||
+      existsSync('/Applications/Warp.app'),
+    format: 'warp',
+    installTarget: () => join(HOME, '.warp', 'prompts'),
+    note: 'Prompt saved to ~/.warp/prompts/arabic-ui-review.md — load it via Warp AI prompt library',
+  },
+  {
+    id: 'openclaw',
+    name: 'OpenClaw',
+    detect: () =>
+      existsSync(join(HOME, '.openclaw')) ||
+      existsSync(join(HOME, '.config', 'openclaw')) ||
+      which('openclaw'),
+    format: 'openclaw',
+    installTarget: () =>
+      existsSync(join(HOME, '.openclaw'))
+        ? join(HOME, '.openclaw', 'rules')
+        : join(HOME, '.config', 'openclaw', 'rules'),
+    note: null,
+  },
 ];
 
 // ─── Model definitions ────────────────────────────────────────────────────────
@@ -282,6 +344,20 @@ function installAgent(agent) {
     case 'zed': {
       ensureDir(target);
       const content = readTemplate('zed-rule.md') || buildGenericRule();
+      writeFileSync(join(target, 'arabic-ui-review.md'), content, 'utf8');
+      break;
+    }
+
+    case 'warp': {
+      ensureDir(target);
+      const content = readTemplate('warp-prompt.md') || buildGenericRule();
+      writeFileSync(join(target, 'arabic-ui-review.md'), content, 'utf8');
+      break;
+    }
+
+    case 'openclaw': {
+      ensureDir(target);
+      const content = readTemplate('openclaw-rule.md') || buildGenericRule();
       writeFileSync(join(target, 'arabic-ui-review.md'), content, 'utf8');
       break;
     }
