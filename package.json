@@ -9,7 +9,8 @@
   "files": [
     "bin/",
     "arabic-ui-review/",
-    "templates/"
+    "templates/",
+    "README.md"
   ],
   "keywords": ["arabic", "i18n", "l10n", "rtl", "ai-agent", "claude", "cursor", "skill"],
   "author": "ElTechnology",
