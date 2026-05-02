@@ -217,7 +217,7 @@ const MODELS = [
     label: 'Fanar  — Arabic-specialized LLM (recommended)',
     hint: 'Get key at https://api.fanar.qa',
     apiBase: 'https://api.fanar.qa/v1',
-    modelId: 'Fanar-S-1-Turbo',
+    modelId: 'Fanar-C-2-27B',
     envKey: 'FANAR_API_KEY',
   },
   {

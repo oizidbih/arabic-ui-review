@@ -60,7 +60,7 @@ def load_config() -> dict:
         )
 
     api_base = get('ARABIC_REVIEW_API_BASE', legacy_json.get('api_base', 'https://api.fanar.qa/v1'))
-    model_id = get('ARABIC_REVIEW_MODEL_ID', legacy_json.get('model_id', 'Fanar-S-1-Turbo'))
+    model_id = get('ARABIC_REVIEW_MODEL_ID', legacy_json.get('model_id', 'Fanar-C-2-27B'))
 
     # API key: try model-specific var first, then generic var, then legacy JSON
     model_name = get('ARABIC_REVIEW_MODEL', legacy_json.get('model', 'fanar'))
@@ -200,6 +200,8 @@ def check_batch(strings: list[str], context: str, config: dict) -> list[dict]:
         ],
         'temperature': 0.1,
         'max_tokens': 4000,
+        # enable_thinking improves Arabic reasoning quality — supported on Fanar-C-2-27B only
+        **({'enable_thinking': True} if config['model_id'] == 'Fanar-C-2-27B' else {}),
     }
 
     try:

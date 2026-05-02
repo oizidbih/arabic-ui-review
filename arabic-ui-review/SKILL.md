@@ -73,7 +73,7 @@ If `--rules` or `--summary` is passed, handle it immediately and skip all other 
    ```
    ARABIC_REVIEW_MODEL        (fanar | openai | claude | groq | custom)
    ARABIC_REVIEW_API_BASE     (default: https://api.fanar.qa/v1)
-   ARABIC_REVIEW_MODEL_ID     (default: Fanar-S-1-Turbo)
+   ARABIC_REVIEW_MODEL_ID     (default: Fanar-C-2-27B)
    FANAR_API_KEY              (or OPENAI_API_KEY / ANTHROPIC_API_KEY / GROQ_API_KEY)
    ARABIC_REVIEW_API_KEY      (generic fallback key var)
    ```

@@ -9,7 +9,7 @@ Place in project root (add to `.gitignore` — contains your API key):
   "model": "fanar",
   "api_key": "YOUR_KEY_HERE",
   "api_base": "https://api.fanar.qa/v1",
-  "model_id": "Fanar-S-1-Turbo"
+  "model_id": "Fanar-C-2-27B"
 }
 ```
 
@@ -33,7 +33,7 @@ def check_arabic_quality(strings: list[str], context: str, config: dict) -> list
     numbered = "\n".join(f'{i+1}. "{s}"' for i, s in enumerate(strings))
     
     payload = {
-        "model": config.get("model_id", "Fanar-S-1-Turbo"),
+        "model": config.get("model_id", "Fanar-C-2-27B"),
         "messages": [
             {
                 "role": "user",
@@ -76,13 +76,17 @@ def check_arabic_quality(strings: list[str], context: str, config: dict) -> list
 
 Change `api_base` and `model_id` in `.arabic-review.json` to use:
 
-| Model | api_base | model_id |
-|-------|----------|----------|
-| **Fanar (default)** | `https://api.fanar.qa/v1` | `Fanar-S-1-Turbo` |
-| **OpenAI GPT-4o** | `https://api.openai.com/v1` | `gpt-4o` |
-| **Anthropic Claude** | Use Anthropic SDK directly | `claude-sonnet-4-6` |
-| **Groq (fast)** | `https://api.groq.com/openai/v1` | `llama-3.1-70b-versatile` |
-| **Together AI** | `https://api.together.xyz/v1` | `mistralai/Mixtral-8x7B` |
+| Model | api_base | model_id | Notes |
+|-------|----------|----------|-------|
+| **Fanar-C-2-27B (default)** | `https://api.fanar.qa/v1` | `Fanar-C-2-27B` | Best quality, supports `enable_thinking` |
+| **Fanar-C-1-8.7B** | `https://api.fanar.qa/v1` | `Fanar-C-1-8.7B` | Medium, faster |
+| **Fanar-S-1-7B** | `https://api.fanar.qa/v1` | `Fanar-S-1-7B` | Small, fastest |
+| **Fanar** | `https://api.fanar.qa/v1` | `Fanar` | General purpose |
+| **Fanar-Sadiq** | `https://api.fanar.qa/v1` | `Fanar-Sadiq` | Islamic sources focus |
+| **OpenAI GPT-4o** | `https://api.openai.com/v1` | `gpt-4o` | |
+| **Anthropic Claude** | Use Anthropic SDK directly | `claude-sonnet-4-6` | |
+| **Groq (fast)** | `https://api.groq.com/openai/v1` | `llama-3.1-70b-versatile` | Free tier available |
+| **Together AI** | `https://api.together.xyz/v1` | `mistralai/Mixtral-8x7B` | |
 
 ## Calling via Bash
 
