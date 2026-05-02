@@ -5,6 +5,7 @@
 # Node
 node_modules/
 package-lock.json
+*.tgz
 
 # Python
 __pycache__/
