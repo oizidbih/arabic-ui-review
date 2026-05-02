@@ -1,5 +1,8 @@
 ---
 name: arabic-ui-review
+trigger: /arabic-review
+user-invocable: true
+argument-hint: "[path] [--segment <name>] [--rules] [--fix] [--translations-only] [--hardcoded-only]"
 description: >
   Reviews and audits Arabic UI language in any application codebase. Finds hardcoded
   Arabic text, analyzes translation/i18n files, checks Arabic quality (RTL, diacritics,
@@ -20,9 +23,51 @@ ask the user whether to apply them.
 
 ---
 
+## Commands
+
+| Command | What it does |
+|---------|-------------|
+| `/arabic-review` | Full audit of current directory — translations + hardcoded search + quality check |
+| `/arabic-review <path>` | Audit a specific directory or file |
+| `/arabic-review --translations-only` | Only audit translation/i18n files, skip source search |
+| `/arabic-review --hardcoded-only` | Only search for hardcoded Arabic in source, skip translation files |
+| `/arabic-review --segment <name>` | Scan one logical segment: `components`, `pages`, `notifications`, `errors`, `forms`, `templates`, `api`, `config` |
+| `/arabic-review --fix` | Run full audit then immediately enter fix loop (skip the "how to proceed?" prompt) |
+| `/arabic-review --rules` | Print the full Arabic rule reference (`references/arabic-rules.md`) without scanning anything |
+| `/arabic-review --rule <code>` | Check only one rule category, e.g. `--rule 1.1` (الهمزة المتوسطة) or `--rule 7` (علامات الترقيم) |
+| `/arabic-review --summary` | Re-print the last generated `arabic-review-report.md` without re-scanning |
+
+**Natural language also works** — the skill auto-triggers on:
+- "review Arabic UI"
+- "find hardcoded Arabic strings"
+- "audit my Arabic translations"
+- "check Arabic text quality"
+- "any Arabic spelling errors?"
+- "is my Arabic correct?"
+
+---
+
 ## Phase 0 — Setup
 
-Resolve LLM config in this priority order:
+### Parse arguments (when invoked as `/arabic-review [args]`)
+
+Before doing anything else, read the arguments passed after `/arabic-review`:
+
+```
+<path>                → set SCAN_ROOT to this path instead of cwd
+--translations-only   → set MODE=translations (skip Phase 3)
+--hardcoded-only      → set MODE=hardcoded (skip Phase 2)
+--segment <name>      → set SEGMENT=<name>, scan only that segment in Phase 3
+--fix                 → after Phase 5 report, auto-enter fix loop (skip prompt)
+--rules               → print references/arabic-rules.md and stop (no scan)
+--rule <code>         → in Phase 4 only check violations matching this rule prefix
+--summary             → read existing arabic-review-report.md and re-print it, then stop
+(no args)             → full audit, SCAN_ROOT=cwd, MODE=full
+```
+
+If `--rules` or `--summary` is passed, handle it immediately and skip all other phases.
+
+### Resolve LLM config in this priority order:
 
 1. **Shell / project `.env`** — read these environment variables:
    ```
